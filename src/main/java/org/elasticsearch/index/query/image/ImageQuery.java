@@ -1,10 +1,12 @@
 package org.elasticsearch.index.query.image;
 
+import net.semanticmetadata.lire.AbstractImageSearcher;
 import net.semanticmetadata.lire.imageanalysis.LireFeature;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.LeafReaderContext;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.search.*;
+import org.apache.lucene.util.Bits;
 import org.apache.lucene.util.ToStringUtils;
 
 import java.io.IOException;
@@ -28,90 +30,66 @@ public class ImageQuery extends Query {
     }
 
     private class ImageScorer extends AbstractImageScorer {
-        private int doc = -1;
-        private final int maxDoc;
+        private final TwoPhaseIterator twoPhaseIterator;
+        private final DocIdSetIterator disi;
 
-        ImageScorer(IndexReader reader, Weight w) {
+        /** Constructor based on a {@link TwoPhaseIterator}. In that case the
+         *  {@link Scorer} will support two-phase iteration.
+         *  @param w the parent weight
+         *  @param twoPhaseIterator the iterator that defines matching documents */
+        public ImageScorer(IndexReader reader, Weight w, TwoPhaseIterator twoPhaseIterator) {
             super(w, luceneFieldName, lireFeature, reader, ImageQuery.this.getBoost());
-            maxDoc = reader.maxDoc();
+            this.twoPhaseIterator = twoPhaseIterator;
+            this.disi = TwoPhaseIterator.asDocIdSetIterator(twoPhaseIterator);
+        }
+
+        @Override
+        public TwoPhaseIterator asTwoPhaseIterator() {
+            return twoPhaseIterator;
         }
 
         @Override
         public int docID() {
-            return doc;
+            return disi.docID();
         }
 
         @Override
         public int nextDoc() throws IOException {
-            doc++;
-            while(doc < maxDoc) {
-                doc++;
-            }
-            if (doc == maxDoc) {
-                doc = NO_MORE_DOCS;
-            }
-            return doc;
+            return disi.nextDoc();
         }
-
 
         @Override
         public int advance(int target) throws IOException {
-            doc = target-1;
-            return nextDoc();
+            return disi.advance(target);
         }
 
         @Override
         public long cost() {
-            return maxDoc;
+            return disi.cost();
         }
     }
 
-    private class ImageWeight extends Weight {
+    private class ImageWeight extends AbstractImageWeight {
         protected ImageWeight(Query query) {
             super(query);
         }
 
         @Override
-        public String toString() {
-            return "weight(" + ImageQuery.this + ")";
-        }
-
-        @Override
-        public float getValueForNormalization() {
-            return 1f;
-        }
-
-        @Override
-        public void normalize(float queryNorm, float topLevelBoost) {
-        }
-
-        @Override
         public Scorer scorer(LeafReaderContext context) throws IOException {
-            return new ImageScorer(context.reader(), this);
-        }
+            final Bits matchingDocs = new Bits.MatchAllBits(context.reader().maxDoc());
+            final DocIdSetIterator approximation = DocIdSetIterator.all(context.reader().maxDoc());
+            final TwoPhaseIterator twoPhase = new TwoPhaseIterator(approximation) {
 
-        @Override
-        public Explanation explain(LeafReaderContext context, int doc) throws IOException {
-            Scorer scorer = scorer(context);
-            boolean exists = (scorer != null && scorer.advance(doc) == doc);
-            if(exists){
-                float score = scorer.score();
-                List<Explanation> details=new ArrayList<>();
-                if (getBoost() != 1.0f) {
-                    details.add(Explanation.match(getBoost(), "boost"));
-                    score = score / getBoost();
+                @Override
+                public boolean matches() throws IOException {
+                    final int doc = approximation.docID();
+
+                    return matchingDocs.get(doc);
                 }
-                details.add(Explanation.match(score ,"image score (1/distance)"));
-                return Explanation.match(
-                        score, ImageQuery.this.toString() + ", product of:",details);
-            }else{
-                return Explanation.noMatch(ImageQuery.this.toString() + " doesn't match id " + doc);
-            }
+            };
+            return new ImageScorer(context.reader(), this,twoPhase);
         }
 
-        @Override
-        public void extractTerms(Set<Term> terms) {
-        }
     }
 
     @Override
@@ -132,12 +110,16 @@ public class ImageQuery extends Query {
 
     @Override
     public boolean equals(Object o) {
+        if (this == o)
+            return true;
+        if (o == null)
+            return false;
         if (!(o instanceof ImageQuery))
             return false;
         ImageQuery other = (ImageQuery) o;
         return (this.getBoost() == other.getBoost())
-                && luceneFieldName.equals(luceneFieldName)
-                && lireFeature.equals(lireFeature);
+                && luceneFieldName.equals(other.luceneFieldName)
+                && lireFeature.equals(other.lireFeature);
     }
 
     @Override

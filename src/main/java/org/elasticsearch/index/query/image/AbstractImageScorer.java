@@ -59,7 +59,7 @@ public abstract class AbstractImageScorer extends Scorer {
     }
 
     @Override
-    public int freq() {
+    public int freq() throws IOException{
         return 1;
     }
 }

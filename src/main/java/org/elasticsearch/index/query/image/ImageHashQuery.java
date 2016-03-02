@@ -67,7 +67,7 @@ public class ImageHashQuery extends Query {
         }
     }
 
-    final class ImageHashWeight extends Weight {
+    final class ImageHashWeight extends AbstractImageWeight {
         private final TermContext termStates;
 
         public ImageHashWeight(IndexSearcher searcher, boolean needsScores, TermContext termStates)
@@ -75,18 +75,6 @@ public class ImageHashQuery extends Query {
             super(ImageHashQuery.this);
             assert termStates != null : "TermContext must not be null";
             this.termStates = termStates;
-        }
-
-        @Override
-        public String toString() { return "weight(" + ImageHashQuery.this + ")"; }
-
-        @Override
-        public float getValueForNormalization() {
-            return 1f;
-        }
-
-        @Override
-        public void normalize(float queryNorm, float topLevelBoost) {
         }
 
         @Override
@@ -114,32 +102,6 @@ public class ImageHashQuery extends Query {
 
         private boolean termNotInReader(LeafReader reader, Term term) throws IOException {
             return reader.docFreq(term) == 0;
-        }
-
-        @Override
-        public Explanation explain(LeafReaderContext context, int doc) throws IOException {
-            Scorer scorer = scorer(context);
-            boolean exists = (scorer != null && scorer.advance(doc) == doc);
-
-            if(exists){
-                float score = scorer.score();
-                List<Explanation> details=new ArrayList<>();
-                if (getBoost() != 1.0f) {
-                    details.add(Explanation.match(getBoost(), "boost"));
-                    score = score / getBoost();
-                }
-                details.add(Explanation.match(score ,"image score (1/distance)"));
-                return Explanation.match(
-                         score, ImageHashQuery.this.toString() + ", product of:",details);
-
-            }else{
-                return Explanation.noMatch(ImageHashQuery.this.toString() + " doesn't match id " + doc);
-            }
-        }
-
-        @Override
-        public void extractTerms(Set<Term> terms) {
-
         }
     }
 
@@ -185,8 +147,8 @@ public class ImageHashQuery extends Query {
         ImageHashQuery other = (ImageHashQuery)o;
         return (this.getBoost() == other.getBoost())
                 && this.term.equals(other.term)
-                & luceneFieldName.equals(luceneFieldName)
-                && lireFeature.equals(lireFeature);
+                & luceneFieldName.equals(other.luceneFieldName)
+                && lireFeature.equals(other.lireFeature);
     }
 
     @Override
