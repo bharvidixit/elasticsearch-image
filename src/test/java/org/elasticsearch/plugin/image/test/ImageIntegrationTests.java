@@ -106,7 +106,7 @@ public class ImageIntegrationTests extends ESIntegTestCase {
                 .get();
         assertNoFailures(searchResponse);
         SearchHits hits = searchResponse.getHits();
-        assertThat("Should match at least one image", hits.getTotalHits(), greaterThanOrEqualTo(1l)); // if using hash, total result maybe different than number of images
+        assertThat("Should match at least one image", hits.getTotalHits(), greaterThanOrEqualTo(1L)); // if using hash, total result maybe different than number of images
         SearchHit hit = hits.getHits()[0];
         assertThat("First should be exact match and has score 1", hit.getScore(), equalTo(2.0f));
         assertImageScore(hits, nameToSearch, 2.0f);
@@ -130,7 +130,7 @@ public class ImageIntegrationTests extends ESIntegTestCase {
         SearchResponse searchResponse3 = client().prepareSearch(INDEX_NAME).setTypes(DOC_TYPE_NAME).setQuery(boolQueryBuilder).setSize(totalImages).get();
         assertNoFailures(searchResponse3);
         SearchHits hits3 = searchResponse3.getHits();
-        assertThat("Should match one document only", hits3.getTotalHits(), equalTo(1l)); // added filename to query, should have only one result
+        assertThat("Should match one document only", hits3.getTotalHits(), equalTo(1L)); // added filename to query, should have only one result
         SearchHit hit3 = hits3.getHits()[0];
         assertThat((String)hit3.getSource().get("name"), equalTo(nameToSearch));
 
@@ -139,7 +139,7 @@ public class ImageIntegrationTests extends ESIntegTestCase {
         SearchResponse searchResponse4 = client().prepareSearch(INDEX_NAME).setTypes(DOC_TYPE_NAME).setQuery(imageQueryBuilder4).setSize(totalImages).get();
         assertNoFailures(searchResponse4);
         SearchHits hits4 = searchResponse4.getHits();
-        assertThat("Should match at least one image", hits4.getTotalHits(), greaterThanOrEqualTo(1l)); // if using hash, total result maybe different than number of images
+        assertThat("Should match at least one image", hits4.getTotalHits(), greaterThanOrEqualTo(1L)); // if using hash, total result maybe different than number of images
         SearchHit hit4 = hits4.getHits()[0];
         assertThat("First should be exact match and has score 1", hit4.getScore(), equalTo(2.0f));
         assertImageScore(hits4, nameToSearch, 2.0f);
@@ -149,7 +149,7 @@ public class ImageIntegrationTests extends ESIntegTestCase {
         SearchResponse searchResponse5 = client().prepareSearch(INDEX_NAME).setTypes(DOC_TYPE_NAME).setQuery(termQueryBuilder).setSize(totalImages).get();
         assertNoFailures(searchResponse5);
         SearchHits hits5 = searchResponse5.getHits();
-        assertThat("Should match at least one record", hits5.getTotalHits(), greaterThanOrEqualTo(1l)); // if using hash, total result maybe different than number of images
+        assertThat("Should match at least one record", hits5.getTotalHits(), greaterThanOrEqualTo(1L)); // if using hash, total result maybe different than number of images
 
         // test search with exist image
         ImageQueryBuilder imageQueryBuilder6 = new ImageQueryBuilder("img").feature(FeatureEnum.CEDD.name()).lookupIndex(INDEX_NAME).lookupType(DOC_TYPE_NAME).lookupId(idToSearch).lookupPath("img");
@@ -193,8 +193,7 @@ public class ImageIntegrationTests extends ESIntegTestCase {
             }
         }
         ImageFormat format = ImageFormat.IMAGE_FORMAT_TIFF;
-        byte[] bytes = Sanselan.writeImageToBytes(image, format, Maps.newHashMap());
-        return bytes;
+        return Sanselan.writeImageToBytes(image, format, Maps.newHashMap());
     }
 
     public String copyToStringFromClasspath(String path) throws IOException {

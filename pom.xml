@@ -73,12 +73,6 @@
         </dependency>
 
         <dependency>
-            <groupId>com.github.kzwang</groupId>
-            <artifactId>lire</artifactId>
-            <version>0.9.4-kzwang-beta1</version>
-        </dependency>
-
-        <dependency>
             <groupId>com.twelvemonkeys.imageio</groupId> <!-- Some jpg images failed to parse by standard Java ImageIO, this plugin will fix that -->
             <artifactId>imageio-jpeg</artifactId>
             <version>3.1.2</version>

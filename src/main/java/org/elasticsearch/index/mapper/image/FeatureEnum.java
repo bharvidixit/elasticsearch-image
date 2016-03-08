@@ -1,8 +1,11 @@
 package org.elasticsearch.index.mapper.image;
 
 
-import net.semanticmetadata.lire.imageanalysis.*;
-import net.semanticmetadata.lire.imageanalysis.joint.JointHistogram;
+import net.semanticmetadata.lire.imageanalysis.features.LireFeature;
+import net.semanticmetadata.lire.imageanalysis.features.global.*;
+import net.semanticmetadata.lire.imageanalysis.features.global.joint.*;
+import net.semanticmetadata.lire.imageanalysis.features.global.centrist.*;
+import net.semanticmetadata.lire.imageanalysis.features.global.spatialpyramid.*;
 
 /**
  * Features supported by LIRE
@@ -22,12 +25,23 @@ public enum FeatureEnum {
     JOINT_HISTOGRAM(JointHistogram.class),
     JPEG_COEFFICIENT_HISTOGRAM(JpegCoefficientHistogram.class),
     LOCAL_BINARY_PATTERNS(LocalBinaryPatterns.class),
+    LOCAL_BINARY_PATTERNS_AND_OPPONENT(LocalBinaryPatternsAndOpponent.class),
     LUMINANCE_LAYOUT(LuminanceLayout.class),
     OPPONENT_HISTOGRAM(OpponentHistogram.class),
     PHOG(PHOG.class),
     ROTATION_INVARIANT_LOCAL_BINARY_PATTERNS(RotationInvariantLocalBinaryPatterns.class),
     SCALABLE_COLOR(ScalableColor.class),
     TAMURA(Tamura.class),
+    FUZZY_COLOR_HISTOGRAM(FuzzyColorHistogram.class),
+    FUZZY_OPPONENT_HISTOGRAM(FuzzyOpponentHistogram.class),
+    RANK_AND_OPPONENT(RankAndOpponent.class),
+    SIMPLE_CENTRIST(SimpleCentrist.class),
+    SPACC(SPACC.class),
+    SPATIAL_PYRAMID_CENTRIST(SpatialPyramidCentrist.class),
+    SPCEDD(SPCEDD.class),
+    SPFCTH(SPFCTH.class),
+    SPJCD(SPJCD.class),
+    SPLBP(SPLBP.class)
     ;
 
     private Class<? extends LireFeature> featureClass;

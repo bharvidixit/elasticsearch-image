@@ -5,9 +5,10 @@ import com.drew.imaging.ImageProcessingException;
 import com.drew.metadata.Directory;
 import com.drew.metadata.Metadata;
 import com.drew.metadata.Tag;
-import net.semanticmetadata.lire.imageanalysis.LireFeature;
-import net.semanticmetadata.lire.indexing.hashing.BitSampling;
-import net.semanticmetadata.lire.indexing.hashing.LocalitySensitiveHashing;
+import net.semanticmetadata.lire.imageanalysis.features.Extractor;
+import net.semanticmetadata.lire.imageanalysis.features.LireFeature;
+import net.semanticmetadata.lire.indexers.hashing.BitSampling;
+import net.semanticmetadata.lire.indexers.hashing.LocalitySensitiveHashing;
 import net.semanticmetadata.lire.utils.ImageUtils;
 import net.semanticmetadata.lire.utils.SerializationUtils;
 import org.apache.lucene.document.BinaryDocValuesField;
@@ -302,7 +303,7 @@ public class ImageMapper extends FieldMapper {
                     lireFeature = featureExtractMap.get(featureEnum);
                 } else {
                     lireFeature = featureEnum.getFeatureClass().newInstance();
-                    lireFeature.extract(img);
+                    ((Extractor)lireFeature).extract(img);
                 }
                 byte[] parsedContent = lireFeature.getByteArrayRepresentation();
 
@@ -317,9 +318,9 @@ public class ImageMapper extends FieldMapper {
                         HashEnum hashEnum = HashEnum.valueOf(h);
                         int[] hashVals = null;
                         if (hashEnum.equals(HashEnum.BIT_SAMPLING)) {
-                            hashVals = BitSampling.generateHashes(lireFeature.getDoubleHistogram());
+                            hashVals = BitSampling.generateHashes(lireFeature.getFeatureVector());
                         } else if (hashEnum.equals(HashEnum.LSH)) {
-                            hashVals = LocalitySensitiveHashing.generateHashes(lireFeature.getDoubleHistogram());
+                            hashVals = LocalitySensitiveHashing.generateHashes(lireFeature.getFeatureVector());
                         }
                         String mapperName = featureEnum.name() + "." + HASH + "." + h;
                         FieldMapper hashMapper = hashMappers.get(mapperName) ;
