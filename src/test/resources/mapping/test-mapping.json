@@ -1,27 +1,11 @@
 {
     "test": {
-        "_source": {
-            "excludes": ["img"]
-        },
         "properties": {
             "img": {
                 "type": "image",
-                "feature": {
-                    "CEDD": {
-                        "hash": "BIT_SAMPLING"
-                    },
-                    "JCD": {
-                        "hash": ["BIT_SAMPLING", "LSH"]
-                    },
-                    "FCTH": {}
-                },
-                "metadata": {
-                    "exif_ifd0.x_resolution": {
-                        "type": "string",
-                        "index": "not_analyzed",
-                        "store": "yes"
-                    }
-                }
+                "feature": ["CEDD","JCD","FCTH"],
+                "hash":"BIT_SAMPLING",
+                "store":false
             },
             "name": {
                 "type": "string",

@@ -1,15 +1,9 @@
 package org.elasticsearch.plugin.image;
 
-import org.elasticsearch.common.inject.Module;
-import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.index.mapper.image.ImageMapper;
 import org.elasticsearch.index.query.image.ImageQueryParser;
 import org.elasticsearch.indices.IndicesModule;
 import org.elasticsearch.plugins.Plugin;
-
-import java.util.Collection;
-import java.util.Collections;
-
 
 public class ImagePlugin extends Plugin {
 

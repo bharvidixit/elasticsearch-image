@@ -18,6 +18,7 @@
             <useTransitiveFiltering>true</useTransitiveFiltering>
             <excludes>
                 <exclude>org.elasticsearch:elasticsearch</exclude>
+                <exclude>${project.basedir}\libs\*.jar</exclude>
             </excludes>
         </dependencySet>
     </dependencySets>

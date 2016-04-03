@@ -1,39 +1,148 @@
 package org.elasticsearch.index.query.image;
 
 import net.semanticmetadata.lire.imageanalysis.features.LireFeature;
-import org.apache.lucene.index.IndexReader;
-import org.apache.lucene.index.LeafReaderContext;
+import org.apache.lucene.document.Document;
+import org.apache.lucene.index.*;
 import org.apache.lucene.search.*;
 import org.apache.lucene.util.Bits;
 import org.apache.lucene.util.ToStringUtils;
+import org.elasticsearch.ElasticsearchImageProcessException;
+import org.elasticsearch.index.mapper.image.GlobalFeatureEnum;
+
 import java.io.IOException;
+import java.util.Set;
+import java.util.logging.Logger;
 
 /**
- * Copied from {@link MatchAllDocsQuery}, calculate score for all docs
+ * Created by zengde on 2016/3/25.
  */
-public class ImageQuery extends Query {
+public class ImageQuery  extends Query {
+    protected Logger logger = Logger.getLogger(getClass().getName());
+    protected String fieldName, codebookName;
+    protected LireFeature cachedInstance = null;
 
-    private String luceneFieldName;
-    private LireFeature lireFeature;
 
-    public ImageQuery(String luceneFieldName, LireFeature lireFeature, float boost) {
-        this.luceneFieldName = luceneFieldName;
-        this.lireFeature = lireFeature;
+    protected double maxDistance=-1d;
+    private LireFeature feature;
+
+    public ImageQuery(LireFeature feature, GlobalFeatureEnum globalfeatureEnum, float boost) {
+        try {
+            this.feature=feature;
+            this.fieldName = feature.getFieldName();
+            this.cachedInstance = globalfeatureEnum.getGlobalFeatureClass().newInstance();
+        } catch (InstantiationException | IllegalAccessException e) {
+            throw new ElasticsearchImageProcessException("Failed to initial image feature class", e);
+        }
         setBoost(boost);
     }
 
-    private class ImageScorer extends AbstractImageScorer {
+    /**
+     * Main similarity method called for each and every document in the index.
+     *
+     * @param document
+     * @param lireFeature
+     * @return the distance between the given feature and the feature stored in the document.
+     */
+    protected double getDistance(Document document, LireFeature lireFeature) {
+        if (document.getField(fieldName).binaryValue() != null && document.getField(fieldName).binaryValue().length > 0) {
+            cachedInstance.setByteArrayRepresentation(document.getField(fieldName).binaryValue().bytes, document.getField(fieldName).binaryValue().offset, document.getField(fieldName).binaryValue().length);
+            return lireFeature.getDistance(cachedInstance);
+        } else {
+            logger.warning("No feature stored in this document! (" + lireFeature.getFeatureName() + ")");
+        }
+        return 0d;
+    }
+
+    @Override
+    public Weight createWeight(IndexSearcher searcher, boolean needsScores) throws IOException {
+        return new ImageWeight(this);
+    }
+
+    @Override
+    public String toString(String field) {
+        StringBuilder buffer = new StringBuilder();
+        buffer.append(fieldName);
+        buffer.append(",");
+        buffer.append(cachedInstance.getClass().getSimpleName());
+        buffer.append(ToStringUtils.boost(getBoost()));
+        return buffer.toString();
+    }
+
+    private class ImageWeight extends Weight{
+        protected ImageWeight(Query query) {
+            super(query);
+        }
+
+        @Override
+        public void extractTerms(Set<Term> terms) {}
+
+        @Override
+        public Explanation explain(LeafReaderContext context, int doc) throws IOException {
+            return null;
+        }
+
+        @Override
+        public float getValueForNormalization() throws IOException {
+            return 1f;
+        }
+
+        @Override
+        public void normalize(float norm, float topLevelBoost) {}
+
+        @Override
+        public Scorer scorer(LeafReaderContext context) throws IOException {
+            final Bits matchingDocs = new Bits.MatchAllBits(context.reader().maxDoc());
+            final DocIdSetIterator approximation = DocIdSetIterator.all(context.reader().maxDoc());
+            final TwoPhaseIterator twoPhase = new TwoPhaseIterator(approximation) {
+                @Override
+                public boolean matches() throws IOException {
+                    final int doc = approximation.docID();
+
+                    return matchingDocs.get(doc);
+                }
+            };
+            return new ImageScorer(context.reader(), this,twoPhase,getBoost());
+        }
+
+        @Override
+        public String toString() {
+            return "weight(" + ImageWeight.this + ")";
+        }
+    }
+
+    private class ImageScorer extends Scorer{
         private final TwoPhaseIterator twoPhaseIterator;
         private final DocIdSetIterator disi;
+        private final IndexReader reader;
+        private final float boost;
 
-        /** Constructor based on a {@link TwoPhaseIterator}. In that case the
-         *  {@link Scorer} will support two-phase iteration.
-         *  @param w the parent weight
-         *  @param twoPhaseIterator the iterator that defines matching documents */
-        public ImageScorer(IndexReader reader, Weight w, TwoPhaseIterator twoPhaseIterator) {
-            super(w, luceneFieldName, lireFeature, reader, ImageQuery.this.getBoost());
+        public ImageScorer(LeafReader reader, ImageWeight imageWeight, TwoPhaseIterator twoPhaseIterator,float boost) {
+            super(imageWeight);
+            this.reader = reader;
             this.twoPhaseIterator = twoPhaseIterator;
             this.disi = TwoPhaseIterator.asDocIdSetIterator(twoPhaseIterator);
+            this.boost=boost;
+        }
+
+        @Override
+        public float score() throws IOException {
+            assert docID() != NO_MORE_DOCS;
+            Document doc=reader.document(docID());
+            double tmpDistance=getDistance(doc,feature);
+            assert (tmpDistance >= 0);
+            if (tmpDistance > maxDistance) maxDistance = tmpDistance;
+            float score=(float) tmpDistance;
+            if (Float.compare(score, 1.0f) <= 0) { // distance less than 1, consider as same image
+                score = 2f - score;
+            } else {
+                score = 1 / score;
+            }
+            return score * boost;
+        }
+
+        @Override
+        public int freq() throws IOException {
+            return 1;
         }
 
         @Override
@@ -61,68 +170,4 @@ public class ImageQuery extends Query {
             return disi.cost();
         }
     }
-
-    private class ImageWeight extends AbstractImageWeight {
-        protected ImageWeight(Query query) {
-            super(query);
-        }
-
-        @Override
-        public Scorer scorer(LeafReaderContext context) throws IOException {
-            final Bits matchingDocs = new Bits.MatchAllBits(context.reader().maxDoc());
-            final DocIdSetIterator approximation = DocIdSetIterator.all(context.reader().maxDoc());
-            final TwoPhaseIterator twoPhase = new TwoPhaseIterator(approximation) {
-
-                @Override
-                public boolean matches() throws IOException {
-                    final int doc = approximation.docID();
-
-                    return matchingDocs.get(doc);
-                }
-            };
-            return new ImageScorer(context.reader(), this,twoPhase);
-        }
-
-    }
-
-    @Override
-    public Weight createWeight(IndexSearcher searcher, boolean needsScores) {
-        return new ImageWeight(this);
-    }
-
-    @Override
-    public String toString(String field) {
-        StringBuilder buffer = new StringBuilder();
-        buffer.append(luceneFieldName);
-        buffer.append(",");
-        buffer.append(lireFeature.getClass().getSimpleName());
-        buffer.append(ToStringUtils.boost(getBoost()));
-        return buffer.toString();
-    }
-
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o)
-            return true;
-        if (o == null)
-            return false;
-        if (!(o instanceof ImageQuery))
-            return false;
-        ImageQuery other = (ImageQuery) o;
-        return (this.getBoost() == other.getBoost())
-                && luceneFieldName.equals(other.luceneFieldName)
-                && lireFeature.equals(other.lireFeature);
-    }
-
-    @Override
-    public int hashCode() {
-        int result = super.hashCode();
-        result = 31 * result + luceneFieldName.hashCode();
-        result = 31 * result + lireFeature.hashCode();
-        result = Float.floatToIntBits(getBoost()) ^ result;
-        return result;
-    }
-
-
 }
