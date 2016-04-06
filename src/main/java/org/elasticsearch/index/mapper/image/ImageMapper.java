@@ -6,6 +6,7 @@ import com.drew.metadata.Directory;
 import com.drew.metadata.Metadata;
 import com.drew.metadata.Tag;
 import net.semanticmetadata.lire.builders.GlobalDocumentBuilder;
+import net.semanticmetadata.lire.builders.GlobalDocumentBuilder.HashingMode;
 import net.semanticmetadata.lire.imageanalysis.features.Extractor;
 import net.semanticmetadata.lire.imageanalysis.features.LireFeature;
 import net.semanticmetadata.lire.imageanalysis.features.global.AutoColorCorrelogram;
@@ -51,6 +52,8 @@ public class ImageMapper extends FieldMapper {
     public static final String HASH = "hash";
     public static final String FEATURE = "feature";
 
+    public static final String LSH_HASH_FILE = "/hash/lshHashFunctions.obj";
+
     public static class Defaults {
         public static final ImageFieldType FIELD_TYPE = new ImageFieldType();
         static {
@@ -84,7 +87,7 @@ public class ImageMapper extends FieldMapper {
 
     public static class Builder extends FieldMapper.Builder<Builder, ImageMapper> {
         private List<String> features;
-        private String hash;
+        private String hash="";
 
         public Builder(String name) {
             super(name, Defaults.FIELD_TYPE);
@@ -139,13 +142,27 @@ public class ImageMapper extends FieldMapper {
     }
 
     private List<String> features;
-    private String hash;
+    private HashingMode hashingMode;
 
     protected ImageMapper(String simpleName, MappedFieldType fieldType, MappedFieldType defaultFieldType, Settings indexSettings, MultiFields multiFields, CopyTo copyTo,
                           List<String> features, String hash) {
         super(simpleName, fieldType, defaultFieldType, indexSettings, multiFields, copyTo);
         this.features=features;
-        this.hash=hash;
+        if(!hash.isEmpty()){
+            try{
+                this.hashingMode= HashingMode.valueOf(hash);
+            }catch (Exception e){
+                this.hashingMode=HashingMode.None;
+            }
+        }
+        if(hashingMode.equals(HashingMode.LSH)){
+            //LocalitySensitiveHashing.generateHashFunctions();
+            try {
+                LocalitySensitiveHashing.readHashFunctions(ImageMapper.class.getResourceAsStream(LSH_HASH_FILE));
+            } catch (IOException e) {
+                throw new ElasticsearchImageProcessException("Failed to initialize hash function", e);
+            }
+        }
     }
 
     @Override
@@ -162,7 +179,8 @@ public class ImageMapper extends FieldMapper {
             throw new MapperParsingException("No content is provided.");
         }
 
-        GlobalDocumentBuilder globalDocumentBuilder = new GlobalDocumentBuilder(CEDD.class);
+        GlobalDocumentBuilder globalDocumentBuilder = hashingMode.equals(HashingMode.None)? new GlobalDocumentBuilder():
+                new GlobalDocumentBuilder(true,hashingMode);
         for(String featurename:features){
             globalDocumentBuilder.addExtractor(GlobalFeatureEnum.getByName(featurename).getGlobalFeatureClass());
         }
@@ -180,11 +198,12 @@ public class ImageMapper extends FieldMapper {
     @Override
     protected void doXContentBody(XContentBuilder builder, boolean includeDefaults, Params params) throws IOException {
         super.doXContentBody(builder, includeDefaults, params);
+
         builder.startArray(FEATURE);
         for(String featurename:features){
             builder.value(featurename);
         }
         builder.endArray();
-        builder.field(HASH, hash);
+        builder.field(HASH, hashingMode);
     }
 }

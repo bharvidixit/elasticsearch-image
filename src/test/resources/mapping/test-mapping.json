@@ -1,10 +1,13 @@
 {
     "test": {
+        "_source": {
+            "excludes": ["img"]
+        },
         "properties": {
             "img": {
                 "type": "image",
                 "feature": ["CEDD","JCD","FCTH"],
-                "hash":"BIT_SAMPLING",
+                "hash":"BitSampling",
                 "store":false
             },
             "name": {

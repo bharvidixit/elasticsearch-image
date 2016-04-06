@@ -24,11 +24,14 @@ In order to install the plugin, simply run: `bin\plugin install zengde/elasticse
 ```sh
 curl -XPUT 'localhost:9200/test/test/_mapping' -d '{
     "test": {
+		"_source": {
+            "excludes": ["my_img"]
+        },
         "properties": {
             "my_img": {
                 "type": "image",
                 "feature": ["CEDD","JCD","FCTH"],
-                "hash":"BIT_SAMPLING",
+                "hash":"BitSampling",
                 "store":false
             },
             "name": {
@@ -81,7 +84,7 @@ curl -XPOST 'localhost:9200/test/test/_search' -d '{
 
 
 ### Supported Hash Mode
-[`BIT_SAMPLING`](https://github.com/dermotte/LIRE/blob/master/src/main/java/net/semanticmetadata/lire/indexers/hashing/BitSampling.java), [`LSH`](https://github.com/dermotte/LIRE/blob/master/src/main/java/net/semanticmetadata/lire/indexers/hashing/LocalitySensitiveHashing.java), [`MetricSpaces`](https://github.com/dermotte/LIRE/blob/master/src/main/java/net/semanticmetadata/lire/indexers/hashing/MetricSpaces.java)
+[`BitSampling`](https://github.com/dermotte/LIRE/blob/master/src/main/java/net/semanticmetadata/lire/indexers/hashing/BitSampling.java), [`LSH`](https://github.com/dermotte/LIRE/blob/master/src/main/java/net/semanticmetadata/lire/indexers/hashing/LocalitySensitiveHashing.java), [`MetricSpaces`](https://github.com/dermotte/LIRE/blob/master/src/main/java/net/semanticmetadata/lire/indexers/hashing/MetricSpaces.java)
 
 Hash will increase search speed with large data sets
 
