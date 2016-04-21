@@ -1,0 +1,55 @@
+apply plugin: 'java'
+
+group = 'com.github.zengde'
+version = '2.1.1'
+
+description = """elasticsearch-image"""
+
+sourceCompatibility = 1.7
+targetCompatibility = 1.7
+
+configurations {
+
+}
+
+repositories {
+    jcenter()
+}
+
+sourceSets {
+    main {
+        resources.exclude '**/plugin-descriptor.properties'
+    }
+}
+
+dependencies {
+    compile(group: 'org.elasticsearch', name: 'elasticsearch', version:'2.1.1') {
+exclude(module: 'junit')
+    }
+    compile group: 'com.twelvemonkeys.imageio', name: 'imageio-jpeg', version:'3.1.2'
+    compile group: 'com.drewnoakes', name: 'metadata-extractor', version:'2.8.1'
+    compile group: 'com.github.zengde', name: 'lire', version:'1.0b2'
+    compile(group: 'org.elasticsearch', name: 'elasticsearch', version: '2.1.1', ext: 'jar', classifier: 'tests')
+    testCompile(group: 'org.apache.lucene', name: 'lucene-test-framework', version:'5.3.1') {
+exclude(module: 'junit')
+    }
+    testCompile group: 'log4j', name: 'log4j', version:'1.2.17'
+    testCompile group: 'org.elasticsearch', name: 'elasticsearch', version:'2.1.1'
+    testCompile group: 'org.hamcrest', name: 'hamcrest-all', version:'1.3'
+    testCompile(group: 'junit', name: 'junit-dep', version:'4.10') {
+exclude(module: 'hamcrest-core')
+    }
+    testCompile group: 'org.apache.sanselan', name: 'sanselan', version:'0.97-incubator'
+    testCompile group: 'com.twelvemonkeys.imageio', name: 'imageio-tiff', version:'3.1.2'
+}
+
+task makeZip(type: Zip) {
+    from configurations.runtime.copyRecursive()
+            .exclude(group: 'org.elasticsearch')
+            .exclude(group:'org.apache.lucene'),
+            configurations.default.allArtifacts.files,
+            //sourceSets.main.resources
+            "src\\main\\resources\\plugin-descriptor.properties"
+    exclude("jopensurf*.jar")//used in local features
+    exclude("opencv*.jar")//used in local features
+}
