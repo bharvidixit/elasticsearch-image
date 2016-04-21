@@ -100,6 +100,11 @@ public class ImageQuery  extends Query {
 
                     return matchingDocs.get(doc);
                 }
+
+                @Override
+                public float matchCost() {
+                    return 0;
+                }
             };
             return new ImageScorer(context.reader(), this,twoPhase,getBoost());
         }
