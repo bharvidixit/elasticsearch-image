@@ -2,6 +2,8 @@ package org.elasticsearch.index.query.image;
 
 
 import net.semanticmetadata.lire.builders.DocumentBuilder;
+import net.semanticmetadata.lire.builders.GlobalDocumentBuilder;
+import net.semanticmetadata.lire.builders.GlobalDocumentBuilder.HashingMode;
 import net.semanticmetadata.lire.imageanalysis.features.Extractor;
 import net.semanticmetadata.lire.imageanalysis.features.LireFeature;
 import net.semanticmetadata.lire.utils.ImageUtils;
@@ -53,6 +55,8 @@ public class ImageQueryParser implements QueryParser {
                         image = parser.binaryValue();
                     }else if ("boost".equals(currentFieldName)) {
                         boost = parser.floatValue();
+                    }else if("hash".equals(currentFieldName)){
+                        HashingMode hashingMode=HashingMode.valueOf(currentFieldName);
                     }
                     /*else {
                         throw new QueryParsingException(parseContext, "[image] query does not support [" + currentFieldName + "]");

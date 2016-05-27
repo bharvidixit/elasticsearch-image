@@ -2,6 +2,8 @@ Image Plugin for Elasticsearch
 ==================================
 
 [![Build Status](https://travis-ci.org/zengde/elasticsearch-image.png?branch=dev)](https://travis-ci.org/zengde/elasticsearch-image)
+[![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg?maxAge=2592000)](http://www.apache.org/licenses/LICENSE-2.0)
+[![GitHub release](https://img.shields.io/github/release/zengde/elasticsearch-image.svg)](https://github.com/zengde/elasticsearch-image/releases)
 
 The Image Plugin is an Content Based Image Retrieval Plugin for Elasticsearch using [LIRE (Lucene Image Retrieval)](https://github.com/dermotte/LIRE/). It allows users to index images and search for similar images.
 
@@ -11,6 +13,7 @@ In order to install the plugin, simply run: `bin\plugin install zengde/elasticse
 
 |     Image Plugin          |  elasticsearch    | Release date |
 |---------------------------|-------------------|:------------:|
+| 2.2.0dev                  | 2.2.0             | 2016-04-21   |
 | 2.1.1dev                  | 2.1.1             | 2016-04-03   |
 | 2.1.1                     | 2.1.1             | 2016-02-23   |
 | 1.3.0-SNAPSHOT (master)   | 1.1.0             |              |
@@ -92,6 +95,13 @@ See [Large image data sets with LIRE ?some new numbers](http://www.semanticmetad
 
 
 ## ChangeLog
+#### 2.1.1dev (2016-04-03)
+- change mapping and search rest format and ralated code
+- change indexed image document structure
+- upgrade to LIRE1.0b2 , new Hash mode `MetricSpaces` and some Features
+- change buld tools to gradle
+- remove redundant files
+
 #### 2.1.1 (2016-02-23)
 - support es 2.1.1
 

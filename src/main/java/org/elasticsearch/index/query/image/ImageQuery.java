@@ -15,6 +15,7 @@ import java.util.logging.Logger;
 
 /**
  * Created by zengde on 2016/3/25.
+ * Copied from {@link MatchAllDocsQuery}, calculate score for all docs
  */
 public class ImageQuery  extends Query {
     protected Logger logger = Logger.getLogger(getClass().getName());
@@ -55,7 +56,16 @@ public class ImageQuery  extends Query {
 
     @Override
     public Weight createWeight(IndexSearcher searcher, boolean needsScores) throws IOException {
-        return new ImageWeight(this);
+        return new ConstantScoreWeight(this){
+            @Override
+            public String toString() {
+                return "weight(" + ImageQuery.this + ")";
+            }
+            @Override
+            public Scorer scorer(LeafReaderContext context) throws IOException {
+                return new ImageScorer(context.reader(), this,DocIdSetIterator.all(context.reader().maxDoc()),getBoost());
+            }
+        };
     }
 
     @Override
@@ -68,64 +78,18 @@ public class ImageQuery  extends Query {
         return buffer.toString();
     }
 
-    private class ImageWeight extends Weight{
-        protected ImageWeight(Query query) {
-            super(query);
-        }
-
-        @Override
-        public void extractTerms(Set<Term> terms) {}
-
-        @Override
-        public Explanation explain(LeafReaderContext context, int doc) throws IOException {
-            return null;
-        }
-
-        @Override
-        public float getValueForNormalization() throws IOException {
-            return 1f;
-        }
-
-        @Override
-        public void normalize(float norm, float topLevelBoost) {}
-
-        @Override
-        public Scorer scorer(LeafReaderContext context) throws IOException {
-            final Bits matchingDocs = new Bits.MatchAllBits(context.reader().maxDoc());
-            final DocIdSetIterator approximation = DocIdSetIterator.all(context.reader().maxDoc());
-            final TwoPhaseIterator twoPhase = new TwoPhaseIterator(approximation) {
-                @Override
-                public boolean matches() throws IOException {
-                    final int doc = approximation.docID();
-
-                    return matchingDocs.get(doc);
-                }
-
-                @Override
-                public float matchCost() {
-                    return 0;
-                }
-            };
-            return new ImageScorer(context.reader(), this,twoPhase,getBoost());
-        }
-
-        @Override
-        public String toString() {
-            return "weight(" + ImageWeight.this + ")";
-        }
-    }
-
+    //ConstantScoreScorer
     private class ImageScorer extends Scorer{
         private final TwoPhaseIterator twoPhaseIterator;
         private final DocIdSetIterator disi;
         private final IndexReader reader;
         private final float boost;
 
-        public ImageScorer(LeafReader reader, ImageWeight imageWeight, TwoPhaseIterator twoPhaseIterator,float boost) {
+        public ImageScorer(LeafReader reader, Weight imageWeight, DocIdSetIterator disi,float boost) {
             super(imageWeight);
             this.reader = reader;
-            this.twoPhaseIterator = twoPhaseIterator;
-            this.disi = TwoPhaseIterator.asDocIdSetIterator(twoPhaseIterator);
+            this.twoPhaseIterator = null;
+            this.disi = disi;
             this.boost=boost;
         }
 
