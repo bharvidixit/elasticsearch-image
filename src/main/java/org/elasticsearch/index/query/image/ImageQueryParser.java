@@ -56,7 +56,7 @@ public class ImageQueryParser implements QueryParser {
                     }else if ("boost".equals(currentFieldName)) {
                         boost = parser.floatValue();
                     }else if("hash".equals(currentFieldName)){
-                        HashingMode hashingMode=HashingMode.valueOf(currentFieldName);
+                        HashingMode hashingMode=HashingMode.valueOf(parser.text());
                     }
                     /*else {
                         throw new QueryParsingException(parseContext, "[image] query does not support [" + currentFieldName + "]");

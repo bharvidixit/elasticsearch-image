@@ -41,9 +41,11 @@ exclude(module: 'hamcrest-core')
     }
     testCompile group: 'org.apache.sanselan', name: 'sanselan', version:'0.97-incubator'
     testCompile group: 'com.twelvemonkeys.imageio', name: 'imageio-tiff', version:'3.1.2'
+    testCompile 'net.java.dev.jna:jna:4.1.0'
 }
 
 task makeZip(type: Zip) {
+    description 'Assemble as es plugin zip archive to install'
     from configurations.runtime.copyRecursive()
             .exclude(group: 'org.elasticsearch')
             .exclude(group:'org.apache.lucene'),
@@ -53,3 +55,5 @@ task makeZip(type: Zip) {
     exclude("jopensurf*.jar")//used in local features
     exclude("opencv*.jar")//used in local features
 }
+
+test.onlyIf { project.hasProperty('runtest') } //test hangs

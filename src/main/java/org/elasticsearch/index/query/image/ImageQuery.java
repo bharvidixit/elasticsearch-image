@@ -4,13 +4,11 @@ import net.semanticmetadata.lire.imageanalysis.features.LireFeature;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.index.*;
 import org.apache.lucene.search.*;
-import org.apache.lucene.util.Bits;
 import org.apache.lucene.util.ToStringUtils;
 import org.elasticsearch.ElasticsearchImageProcessException;
 import org.elasticsearch.index.mapper.image.GlobalFeatureEnum;
 
 import java.io.IOException;
-import java.util.Set;
 import java.util.logging.Logger;
 
 /**
@@ -26,6 +24,7 @@ public class ImageQuery  extends Query {
     protected double maxDistance=-1d;
     private LireFeature feature;
 
+    @SuppressWarnings("deprecation")
     public ImageQuery(LireFeature feature, GlobalFeatureEnum globalfeatureEnum, float boost) {
         try {
             this.feature=feature;
@@ -70,12 +69,10 @@ public class ImageQuery  extends Query {
 
     @Override
     public String toString(String field) {
-        StringBuilder buffer = new StringBuilder();
-        buffer.append(fieldName);
-        buffer.append(",");
-        buffer.append(cachedInstance.getClass().getSimpleName());
-        buffer.append(ToStringUtils.boost(getBoost()));
-        return buffer.toString();
+        return fieldName +
+                "," +
+                cachedInstance.getClass().getSimpleName() +
+                ToStringUtils.boost(getBoost());
     }
 
     //ConstantScoreScorer
